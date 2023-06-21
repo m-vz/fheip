@@ -1,7 +1,7 @@
 use log::info;
 use tfhe::boolean::prelude::BinaryBooleanGates;
-use tfhe::prelude::FheDecrypt;
-use tfhe::prelude::FheEncrypt;
+use tfhe::prelude::{FheDecrypt, FheEncrypt};
+use tfhe::shortint::parameters;
 use tfhe::ConfigBuilder;
 
 #[allow(unused)]
@@ -38,4 +38,18 @@ pub fn boolean() {
 
     info!("result = {}", result_plain);
     assert!(result_plain);
+}
+
+#[allow(unused)]
+pub fn shortint() {
+    let (client_key, server_key) = tfhe::shortint::gen_keys(parameters::PARAM_MESSAGE_2_CARRY_2);
+    let modulus = client_key.parameters.message_modulus.0;
+
+    let (a_plain, b_plain) = (1, 2);
+    let (a, b) = (client_key.encrypt(a_plain), client_key.encrypt(b_plain));
+    let result = server_key.unchecked_add(&a, &b);
+    let result_plain = client_key.decrypt(&result);
+
+    info!("modulus = {}, result = {}", modulus, result_plain);
+    assert_eq!(result_plain, (a_plain + b_plain) % modulus as u64);
 }
