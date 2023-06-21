@@ -8,3 +8,4 @@ license = "MIT"
 publish = false
 
 [dependencies]
+tfhe = { version = "0.2.4", features = [ "boolean", "shortint", "integer", "aarch64-unix" ] }
