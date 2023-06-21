@@ -2,7 +2,7 @@ use log::info;
 use tfhe::boolean::prelude::BinaryBooleanGates;
 use tfhe::prelude::{FheDecrypt, FheEncrypt};
 use tfhe::shortint::parameters;
-use tfhe::ConfigBuilder;
+use tfhe::{boolean, integer, shortint, ConfigBuilder};
 
 #[allow(unused)]
 pub fn high_level() {
@@ -25,7 +25,7 @@ pub fn high_level() {
 
 #[allow(unused)]
 pub fn boolean() {
-    let (client_key, server_key) = tfhe::boolean::gen_keys();
+    let (client_key, server_key) = boolean::gen_keys();
 
     // execute circuit `if ((NOT b) NAND (a AND b)) then (NOT b) else (a AND b)`
     let (a_plain, b_plain) = (true, false);
@@ -42,7 +42,7 @@ pub fn boolean() {
 
 #[allow(unused)]
 pub fn shortint() {
-    let (client_key, server_key) = tfhe::shortint::gen_keys(parameters::PARAM_MESSAGE_2_CARRY_2);
+    let (client_key, server_key) = shortint::gen_keys(parameters::PARAM_MESSAGE_2_CARRY_2);
     let modulus = client_key.parameters.message_modulus.0;
 
     let (a_plain, b_plain) = (1, 2);
@@ -52,4 +52,17 @@ pub fn shortint() {
 
     info!("modulus = {}, result = {}", modulus, result_plain);
     assert_eq!(result_plain, (a_plain + b_plain) % modulus as u64);
+}
+
+#[allow(unused)]
+pub fn integer() {
+    let (client_key, server_key) = integer::gen_keys_radix(&parameters::PARAM_MESSAGE_2_CARRY_2, 8);
+
+    let (a_plain, b_plain) = (2382, 29374);
+    let (mut a, mut b) = (client_key.encrypt(a_plain), client_key.encrypt(b_plain));
+    let max = server_key.smart_max_parallelized(&mut a, &mut b);
+    let max_plain: u64 = client_key.decrypt(&max);
+
+    info!("result = {}", max_plain);
+    assert_eq!(max_plain, a_plain.max(b_plain));
 }

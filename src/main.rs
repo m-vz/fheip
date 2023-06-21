@@ -5,5 +5,6 @@ fn main() {
 
     // examples::high_level_example();
     // examples::boolean();
-    examples::shortint();
+    // examples::shortint();
+    examples::integer();
 }
