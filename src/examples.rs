@@ -1,22 +1,41 @@
 use log::info;
+use tfhe::boolean::prelude::BinaryBooleanGates;
 use tfhe::prelude::FheDecrypt;
 use tfhe::prelude::FheEncrypt;
 use tfhe::ConfigBuilder;
 
-pub fn high_level_example() {
+#[allow(unused)]
+pub fn high_level() {
     let config = ConfigBuilder::all_disabled().enable_default_uint8().build();
     let (client_key, server_key) = tfhe::generate_keys(config);
 
     tfhe::set_server_key(server_key);
 
-    let (a, b) = (27, 128);
-    let (a_cipher, b_cipher) = (
-        tfhe::FheUint8::encrypt(a, &client_key),
-        tfhe::FheUint8::encrypt(b, &client_key),
+    let (a_plain, b_plain) = (27, 128);
+    let (a, b) = (
+        tfhe::FheUint8::encrypt(a_plain, &client_key),
+        tfhe::FheUint8::encrypt(b_plain, &client_key),
     );
-    let result_cipher = a_cipher + b_cipher; // this is an FHE operation, + is overloaded
-    let result: u8 = result_cipher.decrypt(&client_key);
+    let result = a + b; // this is an FHE operation, + is overloaded
+    let result_plain: u8 = result.decrypt(&client_key);
 
-    info!("result = {}", result);
-    assert_eq!(result, a + b);
+    info!("result = {}", result_plain);
+    assert_eq!(result_plain, a_plain + b_plain);
+}
+
+#[allow(unused)]
+pub fn boolean() {
+    let (client_key, server_key) = tfhe::boolean::gen_keys();
+
+    // execute circuit `if ((NOT b) NAND (a AND b)) then (NOT b) else (a AND b)`
+    let (a_plain, b_plain) = (true, false);
+    let (a, b) = (client_key.encrypt(a_plain), client_key.encrypt(b_plain));
+    let not_b = server_key.not(&b);
+    let a_and_b = server_key.and(&a, &b);
+    let condition = server_key.nand(&not_b, &a_and_b);
+    let result = server_key.mux(&condition, &not_b, &a_and_b);
+    let result_plain = client_key.decrypt(&result);
+
+    info!("result = {}", result_plain);
+    assert!(result_plain);
 }
