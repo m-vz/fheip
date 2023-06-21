@@ -1,0 +1,10 @@
+[package]
+name = "fhe-image-processing"
+version = "0.1.0"
+edition = "2021"
+authors = ["Milan van Zanten <milan@milan.wtf>"]
+description = "Fully homomorphic encryption image processing"
+license = "MIT"
+publish = false
+
+[dependencies]
