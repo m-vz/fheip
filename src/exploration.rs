@@ -1,8 +1,26 @@
 use log::info;
 use tfhe::boolean::prelude::BinaryBooleanGates;
-use tfhe::prelude::{FheDecrypt, FheEncrypt};
-use tfhe::shortint::parameters;
+use tfhe::prelude::*;
+use tfhe::shortint::{parameters, CiphertextBig};
 use tfhe::{boolean, integer, shortint, ConfigBuilder};
+
+#[allow(unused)]
+pub fn shortint_array() {
+    info!("Generating keys...");
+    let (client_key, server_key) = shortint::gen_keys(parameters::PARAM_MESSAGE_8_CARRY_0);
+    info!("Generated keys");
+
+    info!("Encrypting...");
+    let i_plain = [0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 255];
+    let mut i: Vec<CiphertextBig> = i_plain.iter().map(|&x| client_key.encrypt(x)).collect();
+
+    info!("Adding...");
+    i.iter_mut()
+        .for_each(|x| server_key.unchecked_scalar_add_assign(x, 5));
+
+    let result_plain: Vec<u64> = i.iter_mut().map(|x| client_key.decrypt(x)).collect();
+    info!("Result: {:?}", result_plain);
+}
 
 #[allow(unused)]
 pub fn high_level() {

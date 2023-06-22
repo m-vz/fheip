@@ -6,5 +6,6 @@ fn main() {
     // examples::high_level_example();
     // examples::boolean();
     // examples::shortint();
-    exploration::integer();
+    // exploration::integer();
+    exploration::shortint_array();
 }
