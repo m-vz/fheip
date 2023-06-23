@@ -1,11 +1,10 @@
-mod exploration;
+use std::error::Error;
 
-fn main() {
+mod exploration;
+mod server;
+
+fn main() -> Result<(), Box<dyn Error>> {
     pretty_env_logger::init();
 
-    // examples::high_level_example();
-    // examples::boolean();
-    // examples::shortint();
-    // exploration::integer();
-    exploration::shortint_array();
+    server::start("127.0.0.1:34347")
 }
