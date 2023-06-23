@@ -37,18 +37,25 @@ pub fn start(address: &str) -> Result<(), Box<dyn Error>> {
 ///
 /// # Arguments
 ///
-/// * `stream`: The TCP stream to handle.
+/// * `stream`: The TCP stream to handle
 ///
 fn handle_connection(stream: TcpStream) -> Result<bool, Box<dyn Error>> {
-    info!("New connection from {}", stream.peer_addr()?);
-
     let message: Message = bincode::deserialize_from(&stream)?;
     info!("Received {:?}", message);
     match message {
-        Message::Ping => bincode::serialize_into(&stream, &Message::Pong)?,
+        Message::Ping => send_message(Message::Pong, &stream)?,
         Message::Pong => {}
-        Message::Shutdown => return Ok(true),
+        Message::Shutdown => {
+            send_message(Message::Shutdown, &stream)?;
+            return Ok(true);
+        }
     }
 
     Ok(false)
+}
+
+fn send_message(message: Message, stream: &TcpStream) -> Result<(), Box<dyn Error>> {
+    bincode::serialize_into(stream, &message)?;
+
+    Ok(())
 }

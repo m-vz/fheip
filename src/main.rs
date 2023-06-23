@@ -1,10 +1,9 @@
-use log::info;
 use std::error::Error;
-use std::net::TcpStream;
 use std::thread;
 
 use crate::message::Message;
 
+mod client;
 mod exploration;
 mod message;
 mod server;
@@ -15,15 +14,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     pretty_env_logger::init();
 
     let server_join_handle = thread::spawn(|| server::start(ADDRESS).unwrap());
+    let connection = client::Connection::new(ADDRESS);
 
-    let stream = TcpStream::connect(ADDRESS)?;
-    bincode::serialize_into(&stream, &Message::Ping)?;
-    let answer: Message = bincode::deserialize_from(&stream)?;
-    info!("Received {:?}", answer);
+    let answer = connection.send_message(Message::Ping)?;
     assert_eq!(answer, Message::Pong);
 
-    let stream = TcpStream::connect(ADDRESS)?;
-    bincode::serialize_into(&stream, &Message::Shutdown)?;
+    connection.send_message(Message::Shutdown)?;
 
     server_join_handle.join().unwrap();
 
