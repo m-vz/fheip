@@ -15,10 +15,6 @@ pub struct Client {
 impl Client {
     /// Create a new connection to the given address.
     ///
-    /// # Arguments
-    ///
-    /// * `address`: The address to connect to
-    ///
     /// # Examples
     ///
     /// ```
@@ -33,11 +29,7 @@ impl Client {
 
     /// Send a message to the server and wait for a response.
     ///
-    /// Returns the message from the response.
-    ///
-    /// # Arguments
-    ///
-    /// * `message`: The message to send
+    /// Returns the message extracted from the response if there is one.
     ///
     /// # Examples
     ///
