@@ -1,15 +1,18 @@
-use log::info;
 use std::error::Error;
 use std::net::TcpStream;
+
+use log::info;
+use tfhe::shortint::ClientKey;
 
 use crate::message::Message;
 
 #[derive(Debug)]
-pub struct Connection {
+pub struct Client {
     address: String,
+    key: ClientKey,
 }
 
-impl Connection {
+impl Client {
     /// Create a new connection to the given address.
     ///
     /// # Arguments
@@ -21,9 +24,10 @@ impl Connection {
     /// ```
     /// let connection = Connection::new("127.0.0.1:34347");
     /// ```
-    pub fn new(address: &str) -> Self {
+    pub fn new(address: &str, key: ClientKey) -> Self {
         Self {
             address: address.to_string(),
+            key,
         }
     }
 
@@ -44,6 +48,7 @@ impl Connection {
     pub fn send_message(&self, message: Message) -> Result<Option<Message>, Box<dyn Error>> {
         let stream = TcpStream::connect(&self.address)?;
 
+        info!("Sending {:?}", message);
         bincode::serialize_into(&stream, &message)?;
         if message.expect_answer() {
             let answer = bincode::deserialize_from(&stream)?;
