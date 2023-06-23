@@ -41,8 +41,12 @@ impl Server {
 
             match message {
                 Message::Ping => self.send_message(Message::Pong, &stream)?,
-                Message::Pong => {}
                 Message::Shutdown => break,
+                Message::Add(number, scalar) => self.send_message(
+                    Message::AdditionResult(self.key.unchecked_scalar_add(&number, scalar)),
+                    &stream,
+                )?,
+                Message::Pong | Message::AdditionResult(_) => {}
             }
         }
         info!("Shutting down");

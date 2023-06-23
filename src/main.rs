@@ -1,4 +1,5 @@
 use crate::encryption::generate_keys;
+use log::info;
 use std::error::Error;
 use std::thread;
 
@@ -20,6 +21,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let client = client::Client::new(ADDRESS, client_key);
     client.send_message(Message::Ping)?;
+    let result = client.send_message(Message::Add(client.encrypt(6), 1))?;
+    if let Some(Message::AdditionResult(number)) = result {
+        info!("6 + 1 = {}", client.decrypt(&number));
+    }
     client.send_message(Message::Shutdown)?;
 
     join_handle.join().unwrap();

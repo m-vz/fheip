@@ -2,7 +2,7 @@ use std::error::Error;
 use std::net::TcpStream;
 
 use log::info;
-use tfhe::shortint::ClientKey;
+use tfhe::shortint::{CiphertextBig, ClientKey};
 
 use crate::message::Message;
 
@@ -50,5 +50,13 @@ impl Client {
         }
 
         Ok(None)
+    }
+
+    pub fn encrypt(&self, number: u8) -> CiphertextBig {
+        self.key.encrypt(number as u64)
+    }
+
+    pub fn decrypt(&self, number: &CiphertextBig) -> u8 {
+        self.key.decrypt(number) as u8
     }
 }
