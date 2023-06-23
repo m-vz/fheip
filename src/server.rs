@@ -9,7 +9,7 @@ use crate::message::Message;
 ///
 /// # Arguments
 ///
-/// * `address`: The address to listen on.
+/// * `address`: The address to listen on
 ///
 /// # Examples
 ///
@@ -45,10 +45,7 @@ fn handle_connection(stream: TcpStream) -> Result<bool, Box<dyn Error>> {
     match message {
         Message::Ping => send_message(Message::Pong, &stream)?,
         Message::Pong => {}
-        Message::Shutdown => {
-            send_message(Message::Shutdown, &stream)?;
-            return Ok(true);
-        }
+        Message::Shutdown => return Ok(true),
     }
 
     Ok(false)

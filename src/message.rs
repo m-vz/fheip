@@ -6,3 +6,12 @@ pub enum Message {
     Pong,
     Shutdown,
 }
+
+impl Message {
+    pub(crate) fn expect_answer(&self) -> bool {
+        match self {
+            Message::Ping => true,
+            Message::Pong | Message::Shutdown => false,
+        }
+    }
+}

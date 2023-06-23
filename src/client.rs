@@ -41,13 +41,17 @@ impl Connection {
     /// # let connection = client::Connection::new("127.0.0.1:34347");
     /// let answer = connection.send_message(Message::Ping).unwrap();
     /// ```
-    pub fn send_message(&self, message: Message) -> Result<Message, Box<dyn Error>> {
+    pub fn send_message(&self, message: Message) -> Result<Option<Message>, Box<dyn Error>> {
         let stream = TcpStream::connect(&self.address)?;
 
         bincode::serialize_into(&stream, &message)?;
-        let answer = bincode::deserialize_from(&stream)?;
-        info!("Received answer {:?}", answer);
+        if message.expect_answer() {
+            let answer = bincode::deserialize_from(&stream)?;
+            info!("Received answer {:?}", answer);
 
-        Ok(answer)
+            return Ok(Some(answer));
+        }
+
+        Ok(None)
     }
 }

@@ -16,9 +16,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let server_join_handle = thread::spawn(|| server::start(ADDRESS).unwrap());
     let connection = client::Connection::new(ADDRESS);
 
-    let answer = connection.send_message(Message::Ping)?;
-    assert_eq!(answer, Message::Pong);
-
+    assert_eq!(connection.send_message(Message::Ping)?, Some(Message::Pong));
     connection.send_message(Message::Shutdown)?;
 
     server_join_handle.join().unwrap();
