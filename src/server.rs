@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::net::{TcpListener, TcpStream};
 
+use crate::image::EncryptedImage;
 use log::info;
 use tfhe::shortint::ServerKey;
 
@@ -9,6 +10,7 @@ use crate::message::Message;
 #[derive(Debug)]
 pub struct Server {
     key: ServerKey,
+    image: Option<EncryptedImage>,
 }
 
 impl Server {
@@ -20,7 +22,7 @@ impl Server {
     /// server::new(server_key).unwrap();
     /// ```
     pub fn new(key: ServerKey) -> Self {
-        Self { key }
+        Self { key, image: None }
     }
 
     /// Start a server listening on the given address.
@@ -30,7 +32,7 @@ impl Server {
     /// ```
     /// server::start("127.0.0.1:34347").unwrap();
     /// ```
-    pub fn start(&self, address: &str) -> Result<(), Box<dyn Error>> {
+    pub fn start(&mut self, address: &str) -> Result<(), Box<dyn Error>> {
         let listener = TcpListener::bind(address)?;
         info!("Server listening on {}", address);
 
@@ -46,6 +48,7 @@ impl Server {
                     Message::AdditionResult(self.key.unchecked_scalar_add(&number, scalar)),
                     &stream,
                 )?,
+                Message::Image(image) => self.image = Some(image),
                 Message::Pong | Message::AdditionResult(_) => {}
             }
         }
