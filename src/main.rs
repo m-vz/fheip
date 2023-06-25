@@ -57,14 +57,3 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
-#[allow(unused)]
-fn test_addition(client: &Client) -> Result<(), Box<dyn Error>> {
-    client.send_message(Message::Ping)?;
-    let result = client.send_message(Message::Add(client.encrypt(6), 1))?;
-    if let Some(Message::AdditionResult(number)) = result {
-        info!("6 + 1 = {}", client.decrypt(&number));
-    }
-
-    Ok(())
-}

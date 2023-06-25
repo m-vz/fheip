@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::io::{BufReader, BufWriter};
 use std::net::{TcpListener, TcpStream};
 
 use log::info;
@@ -39,7 +40,8 @@ impl Server {
 
         for stream in listener.incoming() {
             let stream = stream?;
-            let message: Message = bincode::deserialize_from(&stream)?;
+            let reader = BufReader::new(&stream);
+            let message: Message = bincode::deserialize_from(reader)?;
             info!("Received {:?}", message);
 
             if !match message {
@@ -52,10 +54,6 @@ impl Server {
             match message {
                 Message::Ping => self.send_message(Message::Pong, &stream)?,
                 Message::Shutdown => break,
-                Message::Add(number, scalar) => self.send_message(
-                    Message::AdditionResult(self.key.unchecked_scalar_add(&number, scalar)),
-                    &stream,
-                )?,
                 Message::Image(image) => self.image = Some(image),
                 Message::Rescale(size, interpolation_type) => {
                     if let Some(image) = &self.image {
@@ -63,7 +61,7 @@ impl Server {
                         self.send_message(Message::Image(rescaled_image), &stream)?;
                     }
                 }
-                Message::Pong | Message::AdditionResult(_) | Message::NoImage => {}
+                Message::Pong | Message::NoImage => {}
             }
         }
         info!("Shutting down");
@@ -72,7 +70,8 @@ impl Server {
     }
 
     fn send_message(&self, message: Message, stream: &TcpStream) -> Result<(), Box<dyn Error>> {
-        bincode::serialize_into(stream, &message)?;
+        let writer = BufWriter::new(stream);
+        bincode::serialize_into(writer, &message)?;
 
         Ok(())
     }

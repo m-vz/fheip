@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::io::BufWriter;
 use std::net::TcpStream;
 
 use log::info;
@@ -40,9 +41,10 @@ impl Client {
     /// ```
     pub fn send_message(&self, message: Message) -> Result<Option<Message>, Box<dyn Error>> {
         let stream = TcpStream::connect(&self.address)?;
+        let writer = BufWriter::new(&stream);
 
         info!("Sending {:?}", message);
-        bincode::serialize_into(&stream, &message)?;
+        bincode::serialize_into(writer, &message)?;
         if message.expect_answer() {
             let answer = bincode::deserialize_from(&stream)?;
             info!("Received answer {:?}", answer);
