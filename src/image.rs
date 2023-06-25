@@ -1,10 +1,11 @@
 use std::error::Error;
 use std::fmt::{Debug, Formatter};
 use std::fs::File;
+use std::io::BufWriter;
 use std::path::Path;
 
 use log::debug;
-use png::{ColorType, Decoder};
+use png::{BitDepth, Decoder, Encoder};
 use serde::{Deserialize, Serialize};
 use tfhe::shortint::{CiphertextBig, ClientKey};
 
@@ -104,15 +105,41 @@ impl PlaintextImage {
         let mut reader = decoder.read_info()?;
         let mut buffer = vec![0; reader.output_buffer_size()];
         let info = reader.next_frame(&mut buffer)?;
+
+        if info.bit_depth != BitDepth::Eight {
+            unimplemented!("Only 8-bit images are supported");
+        }
+
         let image = Image::new(
             buffer[..info.buffer_size()].to_vec(),
             info.width as u16,
             info.height as u16,
             info.color_type.into(),
         );
-        debug!("Loaded {:?}", image);
+        debug!("Loaded {:?} from {:?}", image, file_path);
 
         Ok(image)
+    }
+
+    pub fn save(&self, file_path: &Path) -> Result<(), Box<dyn Error>> {
+        let mut writer = BufWriter::new(File::create(file_path)?);
+        let mut encoder =
+            Encoder::new(&mut writer, self.size.width as u32, self.size.height as u32);
+        encoder.set_color(self.color_type.into());
+        encoder.set_depth(BitDepth::Eight);
+        encoder.set_source_gamma(png::ScaledFloat::from_scaled(45455)); // from https://docs.rs/png/0.17.9/png/#using-the-encoder
+        encoder.set_source_chromaticities(png::SourceChromaticities::new(
+            (0.31270, 0.32900),
+            (0.64000, 0.33000),
+            (0.30000, 0.60000),
+            (0.15000, 0.06000),
+        )); // from https://docs.rs/png/0.17.9/png/#using-the-encoder
+        let mut writer = encoder.write_header()?;
+
+        writer.write_image_data(&self.data)?;
+        debug!("Wrote {:?} to {:?}", self, file_path);
+
+        Ok(())
     }
 
     pub fn encrypt(&self, key: &ClientKey) -> EncryptedImage {

@@ -25,11 +25,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let (client_key, server_key) = generate_keys();
     let join_handle = thread::spawn(|| server::Server::new(server_key).start(ADDRESS).unwrap());
     let client = Client::new(ADDRESS, client_key);
-    let image = Image::load(Path::new("data/test-4x4.png"))?;
+    let image = Image::load(Path::new("data/charmander-21x18.png"))?;
     let encrypted_image = client.encrypt_image(&image);
 
     client.send_message(Message::Image(encrypted_image))?;
-    for scale in [(2, 2), (3, 3), (8, 8)] {
+    for scale in [(10, 9), (30, 18)] {
         info!("Rescaling {}x{}...", scale.0, scale.1);
         let answer = client.send_message(Message::Rescale(
             Size {
@@ -39,7 +39,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             InterpolationType::Nearest,
         ))?;
         if let Some(Message::Image(image)) = answer {
-            info!("Decrypted: {:?}", client.decrypt_image(&image));
+            let decrypted_image = client.decrypt_image(&image);
+            info!("Decrypted: {:?}", decrypted_image);
+            decrypted_image.save(Path::new(
+                format!("data/charmander-rescaled-{}x{}.png", scale.0, scale.1).as_str(),
+            ))?;
         }
     }
 
