@@ -5,13 +5,13 @@ use std::thread;
 use log::info;
 
 use crate::client::Client;
-use crate::encryption::load_or_generate_keys;
+use crate::crypt::key::load_or_generate_keys;
 use crate::image::rescaling::InterpolationType;
 use crate::image::{Image, Size};
 use crate::message::Message;
 
 mod client;
-mod encryption;
+mod crypt;
 mod exploration;
 mod image;
 mod message;

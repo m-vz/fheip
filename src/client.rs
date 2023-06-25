@@ -4,7 +4,7 @@ use std::net::TcpStream;
 
 use log::info;
 
-use crate::encryption::{decrypt_image, encrypt_image, ClientKeyType};
+use crate::crypt::{decrypt_image, encrypt_image, ClientKeyType};
 use crate::image::{EncryptedImage, PlaintextImage};
 use crate::message::Message;
 

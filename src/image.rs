@@ -8,7 +8,7 @@ use log::debug;
 use png::{BitDepth, Decoder, Encoder};
 use serde::{Deserialize, Serialize};
 
-use crate::encryption::EncryptedImageData;
+use crate::crypt::EncryptedImageData;
 
 pub mod rescaling;
 
