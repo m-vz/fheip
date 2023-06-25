@@ -1,11 +1,13 @@
-use crate::encryption::generate_keys;
-use log::info;
 use std::error::Error;
 use std::path::Path;
 use std::thread;
 
+use log::info;
+
+use crate::client::Client;
+use crate::encryption::generate_keys;
+use crate::image::Image;
 use crate::message::Message;
-use crate::message::Message::Image;
 
 mod client;
 mod encryption;
@@ -21,20 +23,31 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let (client_key, server_key) = generate_keys();
     let join_handle = thread::spawn(|| server::Server::new(server_key).start(ADDRESS).unwrap());
-    let client = client::Client::new(ADDRESS, client_key);
+    let client = Client::new(ADDRESS, client_key);
 
-    let image = image::Image::load(Path::new("data/test-4x4.png"))?;
+    send_test_image("data/test-4x4.png", &client)?;
+
+    client.send_message(Message::Shutdown)?;
+    join_handle.join().unwrap();
+
+    Ok(())
+}
+
+fn send_test_image(image_path: &str, client: &Client) -> Result<(), Box<dyn Error>> {
+    let image = Image::load(Path::new(image_path))?;
     let encrypted_image = client.encrypt_image(&image);
-    client.send_message(Image(encrypted_image))?;
+    client.send_message(Message::Image(encrypted_image))?;
 
+    Ok(())
+}
+
+#[allow(unused)]
+fn test_addition(client: &Client) -> Result<(), Box<dyn Error>> {
     client.send_message(Message::Ping)?;
     let result = client.send_message(Message::Add(client.encrypt(6), 1))?;
     if let Some(Message::AdditionResult(number)) = result {
         info!("6 + 1 = {}", client.decrypt(&number));
     }
-    client.send_message(Message::Shutdown)?;
-
-    join_handle.join().unwrap();
 
     Ok(())
 }
