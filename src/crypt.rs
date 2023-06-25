@@ -3,8 +3,9 @@ use tfhe::integer::{RadixCiphertextBig, RadixClientKey, ServerKey};
 use crate::image::{EncryptedImage, PlaintextImage};
 
 pub mod key;
+pub mod operations;
 
-pub const NUM_BLOCKS: usize = 4;
+pub const NUM_BLOCKS: usize = 8;
 
 pub type EncryptedImageData = RadixCiphertextBig;
 pub type ServerKeyType = ServerKey;

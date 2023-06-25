@@ -62,6 +62,15 @@ pub struct Size {
     pub height: u16,
 }
 
+impl Size {
+    pub fn minus_one(&self) -> Self {
+        Self {
+            width: if self.width > 0 { self.width - 1 } else { 0 },
+            height: if self.height > 0 { self.height - 1 } else { 0 },
+        }
+    }
+}
+
 impl Debug for Size {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}x{}", self.width, self.height)

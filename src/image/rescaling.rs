@@ -1,6 +1,8 @@
-use crate::crypt::ServerKeyType;
+use log::trace;
 use serde::{Deserialize, Serialize};
 
+use crate::crypt::operations::bicubic_interpolation;
+use crate::crypt::ServerKeyType;
 use crate::image::{EncryptedImage, Image, Size};
 
 #[derive(Debug)]
@@ -18,9 +20,10 @@ impl Scale {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Copy, Clone)]
 pub enum InterpolationType {
     Nearest,
+    Bilinear,
 }
 
 pub fn rescale(
@@ -31,6 +34,7 @@ pub fn rescale(
 ) -> EncryptedImage {
     match interpolation_type {
         InterpolationType::Nearest => nearest(image, new_size),
+        InterpolationType::Bilinear => bilinear(image, key, new_size),
     }
 }
 
@@ -46,6 +50,61 @@ fn nearest(image: &EncryptedImage, new_size: Size) -> EncryptedImage {
             );
             let pixel = image.get_pixel(x, y);
             rescaled_data.extend(pixel.unwrap().into_iter().cloned());
+        }
+    }
+
+    Image::new(
+        rescaled_data,
+        new_size.width,
+        new_size.height,
+        image.color_type,
+    )
+}
+
+fn bilinear(image: &EncryptedImage, key: &ServerKeyType, new_size: Size) -> EncryptedImage {
+    let scale = Scale::from_sizes(&image.size.minus_one(), &new_size.minus_one());
+    let mut rescaled_data = Vec::with_capacity((new_size.width * new_size.height) as usize);
+
+    for y in 0..new_size.height {
+        for x in 0..new_size.width {
+            // the following illustrates the values to calculate the bilinear interpolation:
+            //
+            //            a         e       b
+            //            *---------*-------* - y_bounds.0
+            //            |         |       |
+            //            |       g * (x,y) |
+            //            |         |       |
+            //            |         |       |
+            //            |         |       |
+            //            *---------*-------* - y_bounds.1
+            //            c         f       d
+            // x_bounds.0 |                 | x_bounds.1
+
+            trace!("Bilinear pixel: ({}, {})", x, y);
+
+            let (x, y) = (x as f32 * scale.width, y as f32 * scale.height);
+            let (x_bounds, y_bounds) = (
+                (x.floor() as u16, x.ceil() as u16),
+                (y.floor() as u16, y.ceil() as u16),
+            );
+            let (x_weight, y_weight) = (x - x_bounds.0 as f32, y - y_bounds.0 as f32);
+            let (a, b, c, d) = (
+                image.get_pixel(x_bounds.0, y_bounds.0).unwrap(),
+                image.get_pixel(x_bounds.1, y_bounds.0).unwrap(),
+                image.get_pixel(x_bounds.0, y_bounds.1).unwrap(),
+                image.get_pixel(x_bounds.1, y_bounds.1).unwrap(),
+            );
+
+            let components: u16 = image.color_type.into();
+            let components = components as usize;
+            let mut pixel = Vec::with_capacity(components);
+            for i in 0..components {
+                trace!("Component: {}", i);
+                pixel.push(bicubic_interpolation(
+                    a[i], b[i], c[i], d[i], x_weight, y_weight, key,
+                ));
+            }
+            rescaled_data.extend(pixel);
         }
     }
 
