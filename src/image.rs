@@ -12,8 +12,8 @@ pub mod rescaling;
 
 #[derive(PartialEq, Eq, Serialize, Deserialize, Clone, Copy)]
 pub struct Size {
-    pub width: u32,
-    pub height: u32,
+    pub width: u16,
+    pub height: u16,
 }
 
 impl Debug for Size {
@@ -95,6 +95,16 @@ impl Debug for PlaintextImage {
 }
 
 pub type EncryptedImage = Image<CiphertextBig>;
+
+impl EncryptedImage {
+    pub fn decrypt(&self, key: &ClientKey) -> PlaintextImage {
+        PlaintextImage {
+            data: self.data.iter().map(|x| key.decrypt(x) as u8).collect(),
+            size: self.size,
+            components: self.components,
+        }
+    }
+}
 
 impl Debug for EncryptedImage {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

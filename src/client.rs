@@ -57,6 +57,10 @@ impl Client {
         image.encrypt(&self.key)
     }
 
+    pub fn decrypt_image(&self, image: &EncryptedImage) -> PlaintextImage {
+        image.decrypt(&self.key)
+    }
+
     pub fn encrypt(&self, number: u8) -> CiphertextBig {
         self.key.encrypt(number as u64)
     }
