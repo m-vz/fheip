@@ -3,15 +3,14 @@ use std::io::{BufReader, BufWriter};
 use std::net::{TcpListener, TcpStream};
 
 use log::info;
-use tfhe::shortint::ServerKey;
 
+use crate::encryption::ServerKeyType;
 use crate::image::rescaling::rescale;
 use crate::image::EncryptedImage;
 use crate::message::Message;
 
-#[derive(Debug)]
 pub struct Server {
-    key: ServerKey,
+    key: ServerKeyType,
     image: Option<EncryptedImage>,
 }
 
@@ -23,7 +22,7 @@ impl Server {
     /// ```
     /// server::new(server_key).unwrap();
     /// ```
-    pub fn new(key: ServerKey) -> Self {
+    pub fn new(key: ServerKeyType) -> Self {
         Self { key, image: None }
     }
 

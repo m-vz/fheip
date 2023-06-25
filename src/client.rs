@@ -3,15 +3,15 @@ use std::io::BufWriter;
 use std::net::TcpStream;
 
 use log::info;
-use tfhe::shortint::{CiphertextBig, ClientKey};
 
+use crate::encryption::{decrypt_image, encrypt_image, ClientKeyType};
 use crate::image::{EncryptedImage, PlaintextImage};
 use crate::message::Message;
 
 #[derive(Debug)]
 pub struct Client {
     address: String,
-    key: ClientKey,
+    key: ClientKeyType,
 }
 
 impl Client {
@@ -22,7 +22,7 @@ impl Client {
     /// ```
     /// let connection = Connection::new("127.0.0.1:34347");
     /// ```
-    pub fn new(address: &str, key: ClientKey) -> Self {
+    pub fn new(address: &str, key: ClientKeyType) -> Self {
         Self {
             address: address.to_string(),
             key,
@@ -56,18 +56,10 @@ impl Client {
     }
 
     pub fn encrypt_image(&self, image: &PlaintextImage) -> EncryptedImage {
-        image.encrypt(&self.key)
+        encrypt_image(image, &self.key)
     }
 
     pub fn decrypt_image(&self, image: &EncryptedImage) -> PlaintextImage {
-        image.decrypt(&self.key)
-    }
-
-    pub fn encrypt(&self, number: u8) -> CiphertextBig {
-        self.key.encrypt(number as u64)
-    }
-
-    pub fn decrypt(&self, number: &CiphertextBig) -> u8 {
-        self.key.decrypt(number) as u8
+        decrypt_image(image, &self.key)
     }
 }

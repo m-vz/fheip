@@ -7,7 +7,8 @@ use std::path::Path;
 use log::debug;
 use png::{BitDepth, Decoder, Encoder};
 use serde::{Deserialize, Serialize};
-use tfhe::shortint::{CiphertextBig, ClientKey};
+
+use crate::encryption::EncryptedImageData;
 
 pub mod rescaling;
 
@@ -69,9 +70,9 @@ impl Debug for Size {
 
 #[derive(PartialEq, Eq, Serialize, Deserialize)]
 pub struct Image<T: Clone> {
-    data: Vec<T>,
-    size: Size,
-    color_type: ColorType,
+    pub data: Vec<T>,
+    pub size: Size,
+    pub color_type: ColorType,
 }
 
 impl<T: Clone> Image<T> {
@@ -141,19 +142,6 @@ impl PlaintextImage {
 
         Ok(())
     }
-
-    pub fn encrypt(&self, key: &ClientKey) -> EncryptedImage {
-        EncryptedImage {
-            data: self
-                .data
-                .clone()
-                .iter_mut()
-                .map(|x| key.encrypt(*x as u64))
-                .collect(),
-            size: self.size,
-            color_type: self.color_type,
-        }
-    }
 }
 
 impl Debug for PlaintextImage {
@@ -166,17 +154,7 @@ impl Debug for PlaintextImage {
     }
 }
 
-pub type EncryptedImage = Image<CiphertextBig>;
-
-impl EncryptedImage {
-    pub fn decrypt(&self, key: &ClientKey) -> PlaintextImage {
-        PlaintextImage {
-            data: self.data.iter().map(|x| key.decrypt(x) as u8).collect(),
-            size: self.size,
-            color_type: self.color_type,
-        }
-    }
-}
+pub type EncryptedImage = Image<EncryptedImageData>;
 
 impl Debug for EncryptedImage {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

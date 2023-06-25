@@ -4,17 +4,26 @@ use std::io::{BufReader, BufWriter};
 use std::path::Path;
 
 use log::info;
-use tfhe::shortint::{gen_keys, parameters, ClientKey, ServerKey};
+use tfhe::integer::{gen_keys_radix, RadixCiphertextBig, RadixClientKey, ServerKey};
+use tfhe::shortint::prelude::PARAM_MESSAGE_2_CARRY_2;
 
-pub fn generate_keys() -> (ClientKey, ServerKey) {
+use crate::image::{EncryptedImage, PlaintextImage};
+
+pub const NUM_BLOCKS: usize = 4;
+
+pub type EncryptedImageData = RadixCiphertextBig;
+pub type ServerKeyType = ServerKey;
+pub type ClientKeyType = RadixClientKey;
+
+pub fn generate_keys() -> (RadixClientKey, ServerKey) {
     info!("Generating keys");
-    gen_keys(parameters::PARAM_MESSAGE_8_CARRY_0)
+    gen_keys_radix(&PARAM_MESSAGE_2_CARRY_2, NUM_BLOCKS)
 }
 
 pub fn generate_keys_to_file(
     client_key_path: &Path,
     server_key_path: &Path,
-) -> Result<(ClientKey, ServerKey), Box<dyn Error>> {
+) -> Result<(RadixClientKey, ServerKey), Box<dyn Error>> {
     let (client_key, server_key) = generate_keys();
 
     let client_key_path = client_key_path.with_extension("key");
@@ -41,7 +50,7 @@ pub fn generate_keys_to_file(
 pub fn load_or_generate_keys(
     client_key_path: &Path,
     server_key_path: &Path,
-) -> Result<(ClientKey, ServerKey), Box<dyn Error>> {
+) -> Result<(RadixClientKey, ServerKey), Box<dyn Error>> {
     let server_key_path = server_key_path.with_extension("key");
     let client_key_path = client_key_path.with_extension("key");
 
@@ -65,4 +74,26 @@ pub fn load_or_generate_keys(
 
     info!("Keys not found, generating new keys");
     generate_keys_to_file(&client_key_path, &server_key_path)
+}
+
+pub fn encrypt_image(image: &PlaintextImage, key: &RadixClientKey) -> EncryptedImage {
+    EncryptedImage::new(
+        image.data.iter().map(|x| key.encrypt(*x as u64)).collect(),
+        image.size.width,
+        image.size.height,
+        image.color_type,
+    )
+}
+
+pub fn decrypt_image(image: &EncryptedImage, key: &RadixClientKey) -> PlaintextImage {
+    PlaintextImage::new(
+        image
+            .data
+            .iter()
+            .map(|x| key.decrypt::<u64, _>(x) as u8)
+            .collect::<Vec<u8>>(),
+        image.size.width,
+        image.size.height,
+        image.color_type,
+    )
 }
