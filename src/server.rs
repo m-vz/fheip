@@ -5,6 +5,7 @@ use std::net::{TcpListener, TcpStream};
 use log::info;
 
 use crate::crypt::ServerKeyType;
+use crate::image::pixel_operations::invert;
 use crate::image::rescaling::rescale;
 use crate::image::EncryptedImage;
 use crate::message::Message;
@@ -44,7 +45,7 @@ impl Server {
             info!("Received {:?}", message);
 
             if !match message {
-                Message::Rescale(_, _) => self.check_image(&stream)?,
+                Message::Rescale(_, _) | Message::Invert => self.check_image(&stream)?,
                 _ => true,
             } {
                 continue;
@@ -58,6 +59,12 @@ impl Server {
                     if let Some(image) = &self.image {
                         let rescaled_image = rescale(image, &self.key, size, interpolation_type);
                         self.send_message(Message::Image(rescaled_image), &stream)?;
+                    }
+                }
+                Message::Invert => {
+                    if let Some(image) = &self.image {
+                        let inverted_image = invert(image, &self.key);
+                        self.send_message(Message::Image(inverted_image), &stream)?;
                     }
                 }
                 Message::Pong | Message::NoImage => {}

@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::crypt::EncryptedImageData;
 
+pub mod pixel_operations;
 pub mod rescaling;
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone, Copy)]
