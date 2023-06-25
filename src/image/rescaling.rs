@@ -1,5 +1,6 @@
 use log::trace;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 use crate::crypt::operations::bicubic_interpolation;
 use crate::crypt::ServerKeyType;
@@ -80,7 +81,7 @@ fn bilinear(image: &EncryptedImage, key: &ServerKeyType, new_size: Size) -> Encr
             //            c         f       d
             // x_bounds.0 |                 | x_bounds.1
 
-            trace!("Bilinear pixel: ({}, {})", x, y);
+            trace!("Pixel: ({}, {})", x, y);
 
             let (x, y) = (x as f32 * scale.width, y as f32 * scale.height);
             let (x_bounds, y_bounds) = (
@@ -95,13 +96,20 @@ fn bilinear(image: &EncryptedImage, key: &ServerKeyType, new_size: Size) -> Encr
                 image.get_pixel(x_bounds.1, y_bounds.1).unwrap(),
             );
 
+            let key = Arc::new(key.clone());
             let components: u16 = image.color_type.into();
             let components = components as usize;
             let mut pixel = Vec::with_capacity(components);
             for i in 0..components {
                 trace!("Component: {}", i);
                 pixel.push(bicubic_interpolation(
-                    a[i], b[i], c[i], d[i], x_weight, y_weight, key,
+                    a[i].clone(),
+                    b[i].clone(),
+                    c[i].clone(),
+                    d[i].clone(),
+                    x_weight,
+                    y_weight,
+                    key.clone(),
                 ));
             }
             rescaled_data.extend(pixel);

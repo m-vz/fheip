@@ -30,28 +30,26 @@ fn main() -> Result<(), Box<dyn Error>> {
     let encrypted_image = client.encrypt_image(&image);
 
     client.send_message(Message::Image(encrypted_image))?;
-    for interpolation_type in [InterpolationType::Bilinear, InterpolationType::Nearest] {
-        for scale in [(2, 2), (5, 5)] {
-            info!("Rescaling {}x{}...", scale.0, scale.1);
-            let answer = client.send_message(Message::Rescale(
-                Size {
-                    width: scale.0,
-                    height: scale.1,
-                },
-                interpolation_type,
-            ))?;
-            if let Some(Message::Image(image)) = answer {
-                let decrypted_image = client.decrypt_image(&image);
-                info!("Decrypted: {:?}", decrypted_image);
-                decrypted_image.save(Path::new(
-                    format!(
-                        "data/output/charmander-rescaled-{:?}-{}x{}.png",
-                        interpolation_type, scale.0, scale.1
-                    )
-                    .as_str(),
-                ))?;
-            }
-        }
+    let scale = (7, 6);
+    let interpolation_type = InterpolationType::Bilinear;
+    info!("Rescaling {}x{}...", scale.0, scale.1);
+    let answer = client.send_message(Message::Rescale(
+        Size {
+            width: scale.0,
+            height: scale.1,
+        },
+        interpolation_type,
+    ))?;
+    if let Some(Message::Image(image)) = answer {
+        let decrypted_image = client.decrypt_image(&image);
+        info!("Decrypted: {:?}", decrypted_image);
+        decrypted_image.save(Path::new(
+            format!(
+                "data/output/charmander-rescaled-{:?}-{}x{}.png",
+                interpolation_type, scale.0, scale.1
+            )
+            .as_str(),
+        ))?;
     }
 
     client.send_message(Message::Shutdown)?;
