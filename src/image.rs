@@ -7,11 +7,28 @@ use std::fs::File;
 use std::path::Path;
 use tfhe::shortint::{CiphertextBig, ClientKey};
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Image {
-    data: Vec<u8>,
+#[derive(PartialEq, Eq, Serialize, Deserialize)]
+pub struct Size {
     width: u32,
     height: u32,
+}
+
+impl Debug for Size {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}x{}", self.width, self.height)
+    }
+}
+
+#[derive(PartialEq, Eq, Serialize, Deserialize)]
+pub struct Image {
+    data: Vec<u8>,
+    size: Size,
+}
+
+impl Debug for Image {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Image ({:?})", self.size)
+    }
 }
 
 impl Image {
@@ -22,10 +39,12 @@ impl Image {
         let info = reader.next_frame(&mut buffer)?;
         let image = Image {
             data: buffer[..info.buffer_size()].to_vec(),
-            width: info.width,
-            height: info.height,
+            size: Size {
+                width: info.width,
+                height: info.height,
+            },
         };
-        debug!("Loaded image ({}x{})", image.width, image.height);
+        debug!("Loaded {:?}", image);
         trace!("Image data: {:?}", image.data);
 
         Ok(image)
@@ -39,8 +58,10 @@ impl Image {
                 .iter_mut()
                 .map(|x| key.encrypt(*x as u64))
                 .collect(),
-            width: self.width,
-            height: self.height,
+            size: Size {
+                width: self.size.width,
+                height: self.size.height,
+            },
         }
     }
 }
@@ -48,12 +69,11 @@ impl Image {
 #[derive(PartialEq, Eq, Serialize, Deserialize)]
 pub struct EncryptedImage {
     data: Vec<CiphertextBig>,
-    width: u32,
-    height: u32,
+    size: Size,
 }
 
 impl Debug for EncryptedImage {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "EncryptedImage ({}x{})", self.width, self.height)
+        write!(f, "EncryptedImage ({:?})", self.size)
     }
 }
