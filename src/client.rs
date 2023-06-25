@@ -1,10 +1,10 @@
 use std::error::Error;
 use std::net::TcpStream;
 
-use crate::image::{EncryptedImage, Image};
 use log::info;
 use tfhe::shortint::{CiphertextBig, ClientKey};
 
+use crate::image::{EncryptedImage, PlaintextImage};
 use crate::message::Message;
 
 #[derive(Debug)]
@@ -53,7 +53,7 @@ impl Client {
         Ok(None)
     }
 
-    pub fn encrypt_image(&self, image: &Image) -> EncryptedImage {
+    pub fn encrypt_image(&self, image: &PlaintextImage) -> EncryptedImage {
         image.encrypt(&self.key)
     }
 
