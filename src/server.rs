@@ -1,10 +1,11 @@
 use std::error::Error;
 use std::net::{TcpListener, TcpStream};
 
-use crate::image::EncryptedImage;
 use log::info;
 use tfhe::shortint::ServerKey;
 
+use crate::image::rescaling::rescale;
+use crate::image::EncryptedImage;
 use crate::message::Message;
 
 #[derive(Debug)]
@@ -41,6 +42,13 @@ impl Server {
             let message: Message = bincode::deserialize_from(&stream)?;
             info!("Received {:?}", message);
 
+            if !match message {
+                Message::Rescale(_, _) => self.check_image(&stream)?,
+                _ => true,
+            } {
+                continue;
+            }
+
             match message {
                 Message::Ping => self.send_message(Message::Pong, &stream)?,
                 Message::Shutdown => break,
@@ -49,7 +57,13 @@ impl Server {
                     &stream,
                 )?,
                 Message::Image(image) => self.image = Some(image),
-                Message::Pong | Message::AdditionResult(_) => {}
+                Message::Rescale(size, interpolation_type) => {
+                    if let Some(image) = &self.image {
+                        let rescaled_image = rescale(image, size, interpolation_type);
+                        self.send_message(Message::Image(rescaled_image), &stream)?;
+                    }
+                }
+                Message::Pong | Message::AdditionResult(_) | Message::NoImage => {}
             }
         }
         info!("Shutting down");
@@ -61,5 +75,16 @@ impl Server {
         bincode::serialize_into(stream, &message)?;
 
         Ok(())
+    }
+
+    fn check_image(&self, stream: &TcpStream) -> Result<bool, Box<dyn Error>> {
+        if self.image.is_none() {
+            info!("Has no image stored, informing client");
+            self.send_message(Message::NoImage, stream)?;
+
+            return Ok(false);
+        }
+
+        Ok(true)
     }
 }
