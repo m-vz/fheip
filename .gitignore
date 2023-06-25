@@ -18,4 +18,6 @@ Icon
 ._*
 
 ### Custom
-data/*.png
+data/**/*.png
+data/**/*.key
+data/**/*.pub
