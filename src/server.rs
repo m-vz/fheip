@@ -56,7 +56,7 @@ impl Server {
                 Message::Image(image) => self.image = Some(image),
                 Message::Rescale(size, interpolation_type) => {
                     if let Some(image) = &self.image {
-                        let rescaled_image = rescale(image, size, interpolation_type);
+                        let rescaled_image = rescale(image, &self.key, size, interpolation_type);
                         self.send_message(Message::Image(rescaled_image), &stream)?;
                     }
                 }

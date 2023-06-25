@@ -10,7 +10,7 @@ pub type EncryptedImageData = RadixCiphertextBig;
 pub type ServerKeyType = ServerKey;
 pub type ClientKeyType = RadixClientKey;
 
-pub fn encrypt_image(image: &PlaintextImage, key: &RadixClientKey) -> EncryptedImage {
+pub fn encrypt_image(image: &PlaintextImage, key: &ClientKeyType) -> EncryptedImage {
     EncryptedImage::new(
         image.data.iter().map(|x| key.encrypt(*x as u64)).collect(),
         image.size.width,
@@ -19,7 +19,7 @@ pub fn encrypt_image(image: &PlaintextImage, key: &RadixClientKey) -> EncryptedI
     )
 }
 
-pub fn decrypt_image(image: &EncryptedImage, key: &RadixClientKey) -> PlaintextImage {
+pub fn decrypt_image(image: &EncryptedImage, key: &ClientKeyType) -> PlaintextImage {
     PlaintextImage::new(
         image
             .data

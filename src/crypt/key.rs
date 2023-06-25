@@ -4,12 +4,12 @@ use std::io::{BufReader, BufWriter};
 use std::path::Path;
 
 use log::info;
-use tfhe::integer::{gen_keys_radix, RadixClientKey, ServerKey};
+use tfhe::integer::gen_keys_radix;
 use tfhe::shortint::prelude::PARAM_MESSAGE_2_CARRY_2;
 
-use crate::crypt::NUM_BLOCKS;
+use crate::crypt::{ClientKeyType, ServerKeyType, NUM_BLOCKS};
 
-pub fn generate_keys() -> (RadixClientKey, ServerKey) {
+pub fn generate_keys() -> (ClientKeyType, ServerKeyType) {
     info!("Generating keys");
     gen_keys_radix(&PARAM_MESSAGE_2_CARRY_2, NUM_BLOCKS)
 }
@@ -17,7 +17,7 @@ pub fn generate_keys() -> (RadixClientKey, ServerKey) {
 pub fn generate_keys_to_file(
     client_key_path: &Path,
     server_key_path: &Path,
-) -> Result<(RadixClientKey, ServerKey), Box<dyn Error>> {
+) -> Result<(ClientKeyType, ServerKeyType), Box<dyn Error>> {
     let (client_key, server_key) = generate_keys();
 
     let client_key_path = client_key_path.with_extension("key");
@@ -44,7 +44,7 @@ pub fn generate_keys_to_file(
 pub fn load_or_generate_keys(
     client_key_path: &Path,
     server_key_path: &Path,
-) -> Result<(RadixClientKey, ServerKey), Box<dyn Error>> {
+) -> Result<(ClientKeyType, ServerKeyType), Box<dyn Error>> {
     let server_key_path = server_key_path.with_extension("key");
     let client_key_path = client_key_path.with_extension("key");
 
