@@ -65,7 +65,8 @@ impl PlaintextImage {
             info.height as u16,
             match info.color_type {
                 ColorType::Grayscale | ColorType::Indexed => 1,
-                ColorType::Rgb | ColorType::GrayscaleAlpha => 2,
+                ColorType::GrayscaleAlpha => 2,
+                ColorType::Rgb => 3,
                 ColorType::Rgba => 4,
             },
         );
