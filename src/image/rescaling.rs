@@ -1,4 +1,3 @@
-use log::trace;
 use serde::{Deserialize, Serialize};
 
 use crate::image::{Image, Size};
@@ -52,6 +51,6 @@ fn nearest<T: Clone>(image: &Image<T>, new_size: Size) -> Image<T> {
         rescaled_data,
         new_size.width,
         new_size.height,
-        image.components,
+        image.color_type,
     )
 }
