@@ -106,6 +106,10 @@ impl<T: Clone> Image<T> {
 
         pixel.into_iter().collect::<Option<Vec<&T>>>()
     }
+
+    pub fn channel_count(&self) -> u16 {
+        self.color_type.into()
+    }
 }
 
 pub type PlaintextImage = Image<u8>;

@@ -41,7 +41,8 @@ pub fn rescale(
 
 fn nearest(image: &EncryptedImage, new_size: Size) -> EncryptedImage {
     let scale = Scale::from_sizes(&image.size, &new_size);
-    let mut rescaled_data = Vec::with_capacity((new_size.width * new_size.height) as usize);
+    let mut rescaled_data =
+        Vec::with_capacity((new_size.width * new_size.height * image.channel_count()) as usize);
 
     for y in 0..new_size.height {
         for x in 0..new_size.width {
@@ -64,7 +65,8 @@ fn nearest(image: &EncryptedImage, new_size: Size) -> EncryptedImage {
 
 fn bilinear(image: &EncryptedImage, key: &ServerKeyType, new_size: Size) -> EncryptedImage {
     let scale = Scale::from_sizes(&image.size.minus_one(), &new_size.minus_one());
-    let mut rescaled_data = Vec::with_capacity((new_size.width * new_size.height) as usize);
+    let mut rescaled_data =
+        Vec::with_capacity((new_size.width * new_size.height * image.channel_count()) as usize);
 
     for y in 0..new_size.height {
         for x in 0..new_size.width {
@@ -97,8 +99,7 @@ fn bilinear(image: &EncryptedImage, key: &ServerKeyType, new_size: Size) -> Encr
             );
 
             let key = Arc::new(key.clone());
-            let components: u16 = image.color_type.into();
-            let components = components as usize;
+            let components = image.channel_count() as usize;
             let mut pixel = Vec::with_capacity(components);
             for i in 0..components {
                 trace!("Component: {}", i);
