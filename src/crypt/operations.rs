@@ -3,6 +3,20 @@ use std::thread;
 
 use crate::crypt::{EncryptedImageData, ServerKeyType};
 
+const ONE_THIRD: f32 = 1.0 / 3.0;
+
+pub fn average_three(x: [&EncryptedImageData; 3], key: &ServerKeyType) -> EncryptedImageData {
+    weight_multiplication(&add_three(x, key), ONE_THIRD, key)
+}
+
+pub fn add_three(x: [&EncryptedImageData; 3], key: &ServerKeyType) -> EncryptedImageData {
+    key.unchecked_add(&key.unchecked_add(x[0], x[1]), x[2])
+}
+
+pub fn invert_u8(x: &EncryptedImageData, key: &ServerKeyType) -> EncryptedImageData {
+    key.neg_parallelized(&key.scalar_sub_parallelized(x, 255_u64))
+}
+
 pub fn bicubic_interpolation(
     a: EncryptedImageData,
     b: EncryptedImageData,
@@ -32,10 +46,10 @@ pub fn linear_interpolation(
     let one_minus_weight = 1.0 - weight;
 
     let x_key = key.clone();
-    let x_scaled = thread::spawn(move || weight_multiplication(&x, one_minus_weight, x_key));
+    let x_scaled = thread::spawn(move || weight_multiplication(&x, one_minus_weight, &x_key));
 
     let y_key = key.clone();
-    let y_scaled = thread::spawn(move || weight_multiplication(&y, weight, y_key));
+    let y_scaled = thread::spawn(move || weight_multiplication(&y, weight, &y_key));
 
     let (x_scaled, y_scaled) = (x_scaled.join().unwrap(), y_scaled.join().unwrap());
 
@@ -45,7 +59,7 @@ pub fn linear_interpolation(
 pub fn weight_multiplication(
     x: &EncryptedImageData,
     weight: f32,
-    key: Arc<ServerKeyType>,
+    key: &ServerKeyType,
 ) -> EncryptedImageData {
     if weight == 1.0 {
         return x.clone();

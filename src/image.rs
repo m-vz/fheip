@@ -95,12 +95,11 @@ impl<T: Clone> Image<T> {
     }
 
     pub fn get_pixel(&self, x: u16, y: u16) -> Option<Vec<&T>> {
-        let components = self.color_type.into();
-        let (x, y) = (x * components, y * components);
+        let (x, y) = (x * self.channel_count(), y * self.channel_count());
         let index = (x + y * self.size.width) as usize;
         let mut pixel = Vec::new();
 
-        for component in 0..components {
+        for component in 0..self.channel_count() {
             pixel.push(self.data.get(index + component as usize));
         }
 
