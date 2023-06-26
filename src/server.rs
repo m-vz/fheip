@@ -5,7 +5,7 @@ use std::net::{TcpListener, TcpStream};
 use log::info;
 
 use crate::crypt::ServerKeyType;
-use crate::image::pixel_operations::invert;
+use crate::image::pixel_operations::{grayscale, invert};
 use crate::image::rescaling::rescale;
 use crate::image::EncryptedImage;
 use crate::message::Message;
@@ -42,10 +42,13 @@ impl Server {
             let stream = stream?;
             let reader = BufReader::new(&stream);
             let message: Message = bincode::deserialize_from(reader)?;
+            let mut response = None;
             info!("Received {:?}", message);
 
             if !match message {
-                Message::Rescale(_, _) | Message::Invert => self.check_image(&stream)?,
+                Message::Rescale(_, _) | Message::Invert | Message::Grayscale => {
+                    self.check_image(&stream)?
+                }
                 _ => true,
             } {
                 continue;
@@ -57,17 +60,31 @@ impl Server {
                 Message::Image(image) => self.image = Some(image),
                 Message::Rescale(size, interpolation_type) => {
                     if let Some(image) = &self.image {
-                        let rescaled_image = rescale(image, &self.key, size, interpolation_type);
-                        self.send_message(Message::Image(rescaled_image), &stream)?;
+                        response = Some(Message::Image(rescale(
+                            image,
+                            &self.key,
+                            size,
+                            interpolation_type,
+                        )));
                     }
                 }
                 Message::Invert => {
                     if let Some(image) = &self.image {
-                        let inverted_image = invert(image, &self.key);
-                        self.send_message(Message::Image(inverted_image), &stream)?;
+                        response = Some(Message::Image(invert(image, &self.key)));
+                    }
+                }
+                Message::Grayscale => {
+                    if let Some(image) = &self.image {
+                        if let Some(grayscale_image) = grayscale(image, &self.key) {
+                            response = Some(Message::Image(grayscale_image));
+                        }
                     }
                 }
                 Message::Pong | Message::NoImage => {}
+            }
+
+            if let Some(response_message) = response {
+                self.send_message(response_message, &stream)?;
             }
         }
         info!("Shutting down");

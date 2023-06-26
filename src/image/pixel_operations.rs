@@ -1,5 +1,8 @@
+use crate::crypt::operations::weight_multiplication;
 use crate::crypt::ServerKeyType;
 use crate::image::{ColorType, EncryptedImage, Image};
+use log::trace;
+use std::sync::Arc;
 
 pub fn invert(image: &EncryptedImage, key: &ServerKeyType) -> EncryptedImage {
     Image::new(
@@ -37,4 +40,46 @@ pub fn invert(image: &EncryptedImage, key: &ServerKeyType) -> EncryptedImage {
         image.size.height,
         image.color_type,
     )
+}
+
+pub fn grayscale(image: &EncryptedImage, key: &ServerKeyType) -> Option<EncryptedImage> {
+    match image.color_type {
+        ColorType::Rgb | ColorType::Rgba => {
+            let mut grayscale_data =
+                Vec::with_capacity((image.size.width * image.size.height) as usize);
+            let multiplication_key = Arc::new(key.clone());
+
+            for y in 0..image.size.height {
+                for x in 0..image.size.width {
+                    trace!("Pixel: ({}, {})", x, y);
+
+                    let pixel = image.get_pixel(x, y).unwrap();
+                    const ONE_THIRD: f32 = 1.0 / 3.0;
+
+                    let added = key.unchecked_add(&key.unchecked_add(pixel[0], pixel[1]), pixel[2]);
+                    grayscale_data.push(weight_multiplication(
+                        &added,
+                        ONE_THIRD,
+                        multiplication_key.clone(),
+                    ));
+
+                    if image.color_type == ColorType::Rgba {
+                        grayscale_data.push(pixel[3].clone());
+                    }
+                }
+            }
+
+            Some(Image::new(
+                grayscale_data,
+                image.size.width,
+                image.size.height,
+                if image.color_type == ColorType::Rgba {
+                    ColorType::GrayscaleAlpha
+                } else {
+                    ColorType::Grayscale
+                },
+            ))
+        }
+        _ => None,
+    }
 }

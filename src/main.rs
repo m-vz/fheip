@@ -8,7 +8,7 @@ use crate::arguments::{Arguments, Command, LoadCommand};
 use crate::client::Client;
 use crate::crypt::key::load_or_generate_keys;
 use crate::image::rescaling::InterpolationType;
-use crate::image::{Image, Size};
+use crate::image::{EncryptedImage, Image, Size};
 use crate::message::Message;
 use crate::server::Server;
 
@@ -75,31 +75,46 @@ fn main() -> Result<(), Box<dyn Error>> {
                         interpolation_type,
                     ))?;
                     if let Some(Message::Image(image)) = answer {
-                        let decrypted_image = client.decrypt_image(&image);
-                        info!("Decrypted: {:?}", decrypted_image);
-
-                        decrypted_image.save(Path::new(
+                        decrypt_and_save(
+                            &client,
+                            &image,
                             format!(
                                 "data/output/rescaled-{:?}-{}x{}.png",
                                 interpolation_type, rescale_command.width, rescale_command.height
                             )
                             .as_str(),
-                        ))?;
+                        )?;
                     }
                 }
                 Command::Invert => {
                     let answer = client.send_message(Message::Invert)?;
                     if let Some(Message::Image(image)) = answer {
-                        let decrypted_image = client.decrypt_image(&image);
-                        info!("Decrypted: {:?}", decrypted_image);
-
-                        decrypted_image.save(Path::new("data/output/inverted.png"))?;
+                        decrypt_and_save(&client, &image, "data/output/inverted.png")?;
+                    }
+                }
+                Command::Grayscale => {
+                    let answer = client.send_message(Message::Grayscale)?;
+                    if let Some(Message::Image(image)) = answer {
+                        decrypt_and_save(&client, &image, "data/output/grayscale.png")?;
                     }
                 }
                 Command::Server => unreachable!(),
             }
         }
     }
+
+    Ok(())
+}
+
+fn decrypt_and_save(
+    client: &Client,
+    image: &EncryptedImage,
+    path: &str,
+) -> Result<(), Box<dyn Error>> {
+    let decrypted_image = client.decrypt_image(image);
+    info!("Decrypted: {:?}", decrypted_image);
+
+    decrypted_image.save(Path::new(path))?;
 
     Ok(())
 }

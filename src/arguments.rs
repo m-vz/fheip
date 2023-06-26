@@ -27,6 +27,8 @@ pub enum Command {
     Rescale(RescaleCommand),
     /// Invert the image stored on the server
     Invert,
+    /// Turn the image stored on the server into grayscale
+    Grayscale,
 }
 
 #[derive(Debug, Args)]
