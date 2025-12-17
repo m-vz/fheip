@@ -1,4 +1,4 @@
-> **Warning**
+> [!Warning]
 > Hic Sunt Dracones
 >
 > Fully homomorphic encryption is in its infancy and this repository is far from production ready.
